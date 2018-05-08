@@ -7,18 +7,19 @@
 #define PIN_D0_0 1
 #define PIN_D0_1 2
 #define PIN_D0_2 3
-#define PIN_D0_3 4
+#define PIN_D0_DOT 4
 #define PIN_D1_0 5
 #define PIN_D1_1 6
 #define PIN_D1_2 7
-#define PIN_D1_3 8
+#define PIN_D1_DOT 8
 #define PIN_D2_0 9
 #define PIN_D2_1 10
 #define PIN_D2_2 11
-#define PIN_D2_3 12
+#define PIN_D2_DOT 12
 
 #define S0 13
 #define S1 A5
+
 int phase;
 int factor; //identifies which digit use is currently editing, multiples of 10
 int digit;
@@ -28,7 +29,7 @@ int guess;
 int digit2;//hundredths
 int digit1;//tenths
 int digit0;//ones
-int currentdigit;
+int currentdigit;//digit indicator
 
 //Final Answers
 int ansdigit2;
@@ -74,8 +75,16 @@ void setup() {
 void loop() {
   switch(phase){
     case 0:{//Setup
+      digitalWrite(S0, HIGH);
+      digitalWrite(S1, LOW);
       outputBCD();
       editDigits();
+      if(digitalRead(enter) == HIGH){//enter current guess
+        ansdigit2 = digit2;
+        ansdigit1 = digit1;
+        ansdigit0 = digit0;
+        phase = 1;
+      }
       //Serial.println(factor);
       outputBCD();
       //delay(1000);
@@ -88,6 +97,10 @@ void loop() {
     }case 2:{//Guess
       editDigits();
       outputBCD();
+    }case 3:{//Wait 2
+      
+    }case 4:{//Done
+      
     }
   }
 }
@@ -96,7 +109,7 @@ void outputBCD2(int num) {//output BCD
   int i;
   int d2;
   
-  for (i = 9; i < 13; i++) {
+  for (i = 9; i < 12; i++) {
     digitalWrite(i, d2 % 2);
     d2 /= 2;
   }
@@ -105,7 +118,7 @@ void outputBCD2(int num) {//output BCD
 void outputBCD1(int num) {//output BCD
   int i;
   int d1;
-  for (i = 5; i < 9; i++) {
+  for (i = 5; i < 8; i++) {
     digitalWrite(i, d1 % 2);
     d1 /= 2;
   }
@@ -115,7 +128,7 @@ void outputBCD0(int num) {//output BCD
   int i;
   int d0;
   
-  for (i = 1; i < 5; i++) {
+  for (i = 1; i < 4; i++) {
     digitalWrite(i, d0 % 2);
     d0 /= 2;
   }
@@ -126,6 +139,43 @@ void outputBCD(){
   outputBCD1(digit1);
   outputBCD0(digit0);
 }
+
+void bullsAndCows(){
+  int bulls;
+  int cows;
+  //Bulls
+  if(ansdigit0 == digit0){
+    bulls += 1;
+  }
+
+  if(ansdigit1 == digit1){
+    bulls += 1;
+  }
+
+  if(ansdigit2 == digit2){
+    bulls += 1;
+  }
+
+  //Cows
+  if(digit0 == ansdigit1 || digit0 == ansdigit2){
+    cows += 1;
+  }
+
+  if(digit1 == ansdigit0 || digit1 == ansdigit2){
+    cows += 1;
+  }
+
+  if(digit2 == ansdigit1 || digit2 == ansdigit0){
+    cows += 1;
+  }
+
+  Serial.println(bulls);
+  Serial.println('B');
+  Serial.println(cows);
+  Serial.println('C');
+}
+
+
 
 void editDigits(){
   if(digitalRead(right) == HIGH){//edit digit to the right
@@ -140,11 +190,6 @@ void editDigits(){
         if(prevleftState == LOW){
           currentdigit = (currentdigit++)%3;
         }
-      }else if(digitalRead(enter) == HIGH){//enter current guess
-        ansdigit2 = digit2;
-        ansdigit1 = digit1;
-        ansdigit0 = digit0;
-        phase = 0;
       }else if(digitalRead(plus) == HIGH){//increment current digit
         switch(currentdigit){
           case 0:{
